@@ -571,42 +571,15 @@
     /// </summary>
     public abstract class CosmosStorageBase
     {
-        /// <summary>
-        /// Holds a list of cached connection strings.
-        /// </summary>
         internal static readonly ConcurrentDictionary<string, string> ConnectionStrings = new ConcurrentDictionary<string, string>();
-        /// <summary>
-        /// The logger
-        /// </summary>
         internal readonly ILogger Logger;
-        /// <summary>
-        /// The service principle configuration
-        /// </summary>
         internal readonly ServicePrincipleConfig ServicePrincipleConfig;
-        /// <summary>
-        /// The msi configuration
-        /// </summary>
         internal readonly MsiConfig MsiConfig;
-        /// <summary>
-        /// The connection string
-        /// </summary>
         internal string ConnectionString;
 
-        /// <summary>
-        /// The cloud client
-        /// </summary>
         private CosmosClient _cloudClient;
-        /// <summary>
-        /// The expiry time
-        /// </summary>
         private DateTimeOffset? _expiryTime;
-        /// <summary>
-        /// The instance name
-        /// </summary>
         private readonly string _instanceName;
-        /// <summary>
-        /// The subscription identifier
-        /// </summary>
         private readonly string _subscriptionId;
 
         internal CosmosClient CloudTableClient
@@ -614,12 +587,18 @@
             get
             {
                 if (_cloudClient == null || _expiryTime <= DateTime.UtcNow)
+                {
                     InitializeClient();
+                }
 
                 return _cloudClient;
             }
         }
 
+        /// <summary>
+        /// Gets or sets the name of the instance.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; }
 
         /// <summary>
@@ -639,35 +618,63 @@
                                 .Build();
 
             if (client == null)
+            {
                 throw new InvalidOperationException("Cannot build Cosmos Client using connection string");
+            }
 
             _cloudClient = client;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CosmosStorageBase"/> class.
+        /// </summary>
+        /// <param name="config">The configuration.</param>
+        /// <param name="logger">The logger.</param>
         protected CosmosStorageBase(ConnectionConfig config, ILogger logger = null)
         {
+            // Validate the config.
+            config.ThrowIfInvalid();
+
             Logger = logger;
             ConnectionString = config.ConnectionString;
             Name = config.InstanceName;
             DatabaseName = config.DatabaseName;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CosmosStorageBase"/> class.
+        /// </summary>
+        /// <param name="config">The configuration.</param>
+        /// <param name="logger">The logger.</param>
         protected CosmosStorageBase(MsiConfig config, ILogger logger = null)
         {
+            // Validate the config.
+            config.ThrowIfInvalid();
+
             Logger = logger;
             MsiConfig = config;
             Name = config.InstanceName;
             DatabaseName = config.DatabaseName;
+
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CosmosStorageBase"/> class.
+        /// </summary>
+        /// <param name="config">The configuration.</param>
+        /// <param name="logger">The logger.</param>
         protected CosmosStorageBase(ServicePrincipleConfig config, ILogger logger = null)
         {
+            // Validate the config.
+            config.ThrowIfInvalid();
+
             Logger = logger;
             ServicePrincipleConfig = config;
             Name = config.InstanceName;
             DatabaseName = config.DatabaseName;
+
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
         }
@@ -698,8 +705,9 @@
                     var provider = new AzureServiceTokenProvider();
                     token = provider.GetAccessTokenAsync(azureManagementAuthority, MsiConfig.TenantId).GetAwaiter().GetResult();
 
-                    if (string.IsNullOrEmpty(token))
+                    if (string.IsNullOrEmpty(token)) {
                         throw new InvalidOperationException("Could not authenticate using Managed Service Identity, ensure the application is running in a secure context");
+                    }
 
                     _expiryTime = DateTime.Now.AddDays(1);
                 }
@@ -713,7 +721,9 @@
                     var tokenResult = context.AcquireTokenAsync(azureManagementAuthority, credential).GetAwaiter().GetResult();
 
                     if (tokenResult == null || tokenResult.AccessToken == null)
+                    {
                         throw new InvalidOperationException($"Could not authenticate to {windowsLoginAuthority}{ServicePrincipleConfig.TenantId} using supplied AppId: {ServicePrincipleConfig.AppId}");
+                    }
 
                     _expiryTime = tokenResult.ExpiresOn;
                     token = tokenResult.AccessToken;
@@ -756,7 +766,7 @@
                 // Build the connection string.
                 var connectionString = $"AccountEndpoint={storageNamespace.DocumentEndpoint};AccountKey={key}";
 
-                // Cache the connection string off so we don't have to reauthenticate.
+                // Cache the connection string off so we don't have to re-authenticate.
                 if (!ConnectionStrings.ContainsKey(_instanceName))
                 {
                     ConnectionStrings.TryAdd(_instanceName, connectionString);

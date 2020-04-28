@@ -7,9 +7,9 @@
     using Cloud.Core.Storage.AzureCosmos.Config;
 
     /// <summary>
-    /// Class IServiceCollectionExtensions.
+    /// Class Service Collection extensions.
     /// </summary>
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Adds an instance of Azure cosmos storage as a singleton with a specific instance name, using managed user config to setup.  Requires the instance 

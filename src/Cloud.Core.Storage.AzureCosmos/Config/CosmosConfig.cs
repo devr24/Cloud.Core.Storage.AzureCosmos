@@ -58,6 +58,10 @@
         [Required]
         public string ConnectionString { get; set; }
 
+        /// <summary>
+        /// Gets the name of the instance.
+        /// </summary>
+        /// <value>The name of the instance.</value>
         public string InstanceName
         {
             get
@@ -73,12 +77,16 @@
                 if (parts.Length <= 1)
                     return null;
 
-                // Account name is used as the indentifier.
-                return parts.Where(p => p.StartsWith(replaceStart))
-                    .FirstOrDefault()?.Replace(replaceStart, string.Empty).Replace(replaceEnd, string.Empty);
+                // Account name is used as the identifier.
+                return parts
+                    .FirstOrDefault(p => p.StartsWith(replaceStart))?.Replace(replaceStart, string.Empty).Replace(replaceEnd, string.Empty);
             }
         }
 
+        /// <summary>
+        /// Gets or sets the name of the database.
+        /// </summary>
+        /// <value>The name of the database.</value>
         [Required]
         public string DatabaseName { get; set; }
     }

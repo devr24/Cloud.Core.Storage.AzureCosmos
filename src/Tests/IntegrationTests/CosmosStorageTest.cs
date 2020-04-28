@@ -23,7 +23,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             var config = new Config.ServicePrincipleConfig
             {
-                InstanceName = readConfig.GetValue<string>("StorageInstanceName"),
+                InstanceName = readConfig.GetValue<string>("InstanceName"),
                 TenantId = readConfig.GetValue<string>("TenantId"),
                 SubscriptionId = readConfig.GetValue<string>("SubscriptionId"),
                 DatabaseName = "Test",
