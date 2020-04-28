@@ -254,3 +254,4 @@ paket-files/
 /src/Tests/coverage.opencover.xml
 /src/ConsoleApp1
 /src/WebApplication1
+Cloud.Core*.xml
