@@ -26,6 +26,8 @@
     /// </summary>
     public class CosmosStorage : CosmosStorageBase, ITableStorage
     {
+        private const string DefaultPartitionKeyPath = "/_partitionKey";
+
         /// <summary>
         /// Initializes a new instance of <see cref="CosmosStorage" /> with Service Principle authentication.
         /// </summary>
@@ -96,13 +98,9 @@
                 }
             }
             catch (Exception ex)
+                when (ex.Message.ToLowerInvariant().Contains("resource not found"))
             {
-                if (ex.Message.Contains("Resource Not Found")) 
-                {
-                    return false;
-                }
-                
-                throw;
+                return false;
             }
 
             return false;
@@ -148,7 +146,7 @@
                         // Store the exception and continue with the loop.        
                         exceptions.Enqueue(e);
                     }
-                 });
+                });
 
             });
 
@@ -160,6 +158,10 @@
 
         /// <summary>
         /// Inserts or updates (upserts) the passed entity into the given table.
+        /// Key should be "PARTITIONVALUE/ID" or just "ID"
+        /// If the partition key was declared as Property X, then make sure the Key has a matching
+        /// partition, otherwise an error will occur.  For example, if partition key was declared as the "Name" property
+        /// of an object, then when the type T comes through, T.Name must be "PartitionKey".
         /// </summary>
         /// <typeparam name="T">Type of object upserted.</typeparam>
         /// <param name="tableName">Name of the table.</param>
@@ -168,14 +170,21 @@
         public async Task UpsertEntity<T>(string tableName, T data) where T : class, ITableItem
         {            
             var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+
+            // Extract partition key will split the passed in partition key ("partition/id") and return the modified 
+            // version of the key ("id" only) as well as the partition key ("partition").
             var partitionKey = ExtractPartitionKey(data.Key, out string modifiedKey);
             data.Key = modifiedKey;
 
-            await cosmosContainer.CreateItemAsync(data, partitionKey);            
+            await cosmosContainer.CreateItemAsync(data, partitionKey);
         }
 
         /// <summary>
         /// Upserts multiple entities into the given table.
+        /// Key should be "PARTITIONVALUE/ID" or just "ID"
+        /// If the partition key was declared as Property X, then make sure the Key has a matching
+        /// partition, otherwise an error will occur.  For example, if partition key was declared as the "Name" property
+        /// of an object, then when the type T comes through, T.Name must be "PartitionKey".
         /// </summary>
         /// <typeparam name="T">Type of object to upsert.</typeparam>
         /// <param name="tableName">Name of the table the items will be added to.</param>
@@ -190,12 +199,12 @@
             // Delete each item
             var task = Task.Run(() => {
 
-                Parallel.ForEach(data, (d) => {
+                Parallel.ForEach(data, d => {
                     try
                     {
                         var partitionKey = ExtractPartitionKey(d.Key, out string modifiedKey);
                         d.Key = modifiedKey;
-
+                        
                         cosmosContainer.CreateItemAsync(d, partitionKey).GetAwaiter().GetResult();
                     }
                     catch (Exception e)
@@ -469,7 +478,7 @@
         public async Task CreateTable(string tableName)
         {
             //Default if none is given
-            string partitionKeyPath = "/_partitionKey";
+            string partitionKeyPath = DefaultPartitionKeyPath;
 
             //Different to the extract partition key method
             if (tableName.Contains("/"))
@@ -581,6 +590,7 @@
         private DateTimeOffset? _expiryTime;
         private readonly string _instanceName;
         private readonly string _subscriptionId;
+        private readonly bool _createIfNotExists;
 
         internal CosmosClient CloudTableClient
         {
@@ -609,7 +619,9 @@
         private void InitializeClient()
         {
             if (ConnectionString.IsNullOrEmpty())
+            {
                 ConnectionString = BuildStorageConnection().GetAwaiter().GetResult();
+            }
 
             var clientBuilder = new CosmosClientBuilder(ConnectionString);
             clientBuilder.WithThrottlingRetryOptions(TimeSpan.FromMilliseconds(500), 3);
@@ -623,6 +635,12 @@
             }
 
             _cloudClient = client;
+
+            // Create the database if it does not exist and been instructed to.
+            if (_createIfNotExists)
+            {
+                _cloudClient.CreateDatabaseIfNotExistsAsync(DatabaseName).GetAwaiter().GetResult();
+            }
         }
 
         /// <summary>
@@ -639,6 +657,8 @@
             ConnectionString = config.ConnectionString;
             Name = config.InstanceName;
             DatabaseName = config.DatabaseName;
+
+            _createIfNotExists = config.CreateDatabaseIfNotExists;
         }
 
         /// <summary>
@@ -658,6 +678,7 @@
 
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
+            _createIfNotExists = config.CreateDatabaseIfNotExists;
         }
 
         /// <summary>
@@ -677,6 +698,7 @@
 
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
+            _createIfNotExists = config.CreateDatabaseIfNotExists;
         }
 
         /// <summary>

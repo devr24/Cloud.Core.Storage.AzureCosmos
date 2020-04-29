@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Cloud.Core.Storage.AzureCosmos.Config;
 using Cloud.Core.Testing;
 using FluentAssertions;
@@ -9,14 +8,16 @@ using Xunit;
 namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
 {
     [IsUnit]
-    public class CosmosConfigTests
+    public class CosmosConfigUnitTests
     {
+        /// <summary>Verify validation works as expected for msi config.</summary>
         [Fact]
         public void Test_Configuration_MsiValidation()
         {
+            // Arrange
             var msiConfig = new MsiConfig();
 
-            // Check the msi config validation.
+            // Act/Assert - Check the msi config validation.
             var validationRes = msiConfig.Validate();
             validationRes.IsValid.Should().BeFalse();
             validationRes.Errors.ToList().Count.Should().Be(4);
@@ -42,11 +43,14 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             validationRes.Errors.ToList().Count.Should().Be(0);
         }
 
+        /// <summary>Verify validation works as expected for connection config.</summary>
         [Fact]
         public void Test_Configuration_ConnectionConfigValidation()
         {
+            // Arrange
             var connectionConfig = new ConnectionConfig();
 
+            // Act/Assert
             var validationRes = connectionConfig.Validate();
             validationRes.IsValid.Should().BeFalse();
             validationRes.Errors.ToList().Count.Should().Be(2);
@@ -62,11 +66,14 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             validationRes.Errors.ToList().Count.Should().Be(0);
         }
 
+        /// <summary>Verify validation works as expected for service principle.</summary>
         [Fact]
         public void Test_Configuration_ServicePrincipleValidation()
         {
+            // Arrange
             var spConfig = new ServicePrincipleConfig();
 
+            // Act/Assert
             var validationRes = spConfig.Validate();
             validationRes.IsValid.Should().BeFalse();
             validationRes.Errors.ToList().Count.Should().Be(6);
@@ -106,8 +113,10 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
         [Fact]
         public void Test_ServiceCollection_NamedInstances()
         {
+            // Arrange
             IServiceCollection serviceCollection = new ServiceCollection();
 
+            // Act/Assert
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeFalse();
             serviceCollection.ContainsService(typeof(IStateStorage)).Should().BeFalse();
             serviceCollection.ContainsService(typeof(IAuditLogger)).Should().BeFalse();
@@ -126,26 +135,33 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             namedInstanceProv["tableStorageInstance3"].Should().NotBeNull();
         }
 
+        /// <summary>Verify instance name is built as expected for connection config.</summary>
         [Fact]
         public void Test_ConnectionConfig_InstanceName()
         {
-            var config = new ConnectionConfig();
-            config.InstanceName.Should().BeNull();
+            // Arrange
+            var config1 = new ConnectionConfig();
+            var config2 = new ConnectionConfig();
+            var config3 = new ConnectionConfig();
+            var config4 = new ConnectionConfig();
 
-            config.ConnectionString = "AB";
-            config.InstanceName.Should().Be(null);
+            // Act
+            config2.ConnectionString = "AB";
+            config3.ConnectionString = "A;B";
+            config4.ConnectionString = "A;AccountEndpoint=https://B;C";
 
-            config.ConnectionString = "A;B";
-            config.InstanceName.Should().Be(null);
-
-            config.ConnectionString = "A;AccountEndpoint=https://B;C";
-            config.InstanceName.Should().Be("B");
+            // Assert
+            config1.InstanceName.Should().BeNull();
+            config2.InstanceName.Should().Be(null);
+            config3.InstanceName.Should().Be(null);
+            config4.InstanceName.Should().Be("B");
         }
         
         /// <summary>Check the ITableStorage is added to the service collection when using the new extension methods.</summary>
         [Fact]
         public void Test_ServiceCollection_AddCosmosStorageSingleton()
         {
+            // Arrange
             IServiceCollection serviceCollection = new ServiceCollection();
 
             serviceCollection.AddCosmosStorageSingleton("test", "test", "test", "test");
@@ -160,8 +176,8 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             serviceCollection.ContainsService(typeof(NamedInstanceFactory<ITableStorage>)).Should().BeTrue();
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeTrue();
 
+            // Act/Assert
             var prov = serviceCollection.BuildServiceProvider();
-
             var resolvedFactory = prov.GetService<NamedInstanceFactory<ITableStorage>>();
 
             resolvedFactory["key1"].Should().NotBeNull();
@@ -169,19 +185,16 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             resolvedFactory["test1"].Should().NotBeNull();
             serviceCollection.Clear();
 
-            serviceCollection.AddCosmosStorageSingleton(new ServicePrincipleConfig { InstanceName = "test", AppId = "test", AppSecret = "test", TenantId = "test", SubscriptionId = "test" });
+            serviceCollection.AddCosmosStorageSingleton(new ServicePrincipleConfig { InstanceName = "test", AppId = "test", AppSecret = "test", TenantId = "test", SubscriptionId = "test", DatabaseName = "test"});
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeTrue();
             serviceCollection.Clear();
 
-            serviceCollection.AddCosmosStorageSingleton(new ConnectionConfig { ConnectionString = "test" });
+            serviceCollection.AddCosmosStorageSingleton(new ConnectionConfig { ConnectionString = "test", DatabaseName = "test"});
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeTrue();
             serviceCollection.Clear();
 
             serviceCollection.AddCosmosStorageSingleton("test", "test", "test", "test");
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeTrue();
         }
-
-        // extension for named instance singleton - msi auth, service principle auth
-        // extension to add cosmos storage singleton - msi, sp, conn string auth
     }
 }

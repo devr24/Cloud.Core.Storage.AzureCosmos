@@ -5,9 +5,11 @@
     using System.Linq;
 
     /// <summary>
-    /// Msi Configuration for Azure KeyVault.
+    /// Class Configuration Base.
+    /// Implements the <see cref="Validation.AttributeValidator" />
     /// </summary>
-    public class MsiConfig : Validation.AttributeValidator
+    /// <seealso cref="Validation.AttributeValidator" />
+    public abstract class ConfigBase : Validation.AttributeValidator
     {
         /// <summary>
         /// Gets or sets the name of the cosmos instance.
@@ -18,6 +20,27 @@
         [Required]
         public string InstanceName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the database identifier.
+        /// </summary>
+        /// <value>
+        /// The database identifier.
+        /// </value>
+        [Required]
+        public string DatabaseName { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [create if not exists].
+        /// </summary>
+        /// <value><c>true</c> if [create if not exists]; otherwise, <c>false</c>.</value>
+        public bool CreateDatabaseIfNotExists { get; set; }
+    }
+
+    /// <summary>
+    /// Msi Configuration for Azure KeyVault.
+    /// </summary>
+    public class MsiConfig : ConfigBase
+    {
         /// <summary>
         /// Gets or sets the tenant identifier.
         /// </summary>
@@ -37,17 +60,19 @@
         public string SubscriptionId { get; set; }
 
         /// <summary>
-        /// Gets or sets the database identifier.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
-        /// <value>
-        /// The database identifier.
-        /// </value>
-        [Required]
-        public string DatabaseName { get; set; }
+        /// <returns>
+        /// A <see cref="string" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            return $"TenantId: {TenantId}, SubscriptionId: {SubscriptionId}, Cosmos InstanceName: {InstanceName}, Database: {DatabaseName}";
+        }
     }
 
     /// <summary>Connection string config.</summary>
-    public class ConnectionConfig : Validation.AttributeValidator
+    public class ConnectionConfig : ConfigBase
     {
         /// <summary>
         /// Gets or sets the connection string for connecting to storage.
@@ -62,7 +87,7 @@
         /// Gets the name of the instance.
         /// </summary>
         /// <value>The name of the instance.</value>
-        public string InstanceName
+        public new string InstanceName
         {
             get
             {             
@@ -84,17 +109,21 @@
         }
 
         /// <summary>
-        /// Gets or sets the name of the database.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
-        /// <value>The name of the database.</value>
-        [Required]
-        public string DatabaseName { get; set; }
+        /// <returns>
+        /// A <see cref="string" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            return $"Cosmos InstanceName: {InstanceName}, Database: {DatabaseName}";
+        }
     }
 
     /// <summary>
     /// Service Principle Configuration for Azure KeyVault.
     /// </summary>
-    public class ServicePrincipleConfig : Validation.AttributeValidator
+    public class ServicePrincipleConfig : ConfigBase
     {
         /// <summary>
         /// Gets or sets the application identifier.
@@ -133,24 +162,6 @@
         public string SubscriptionId { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the storage instance.
-        /// </summary>
-        /// <value>
-        /// The name of the storage instance.
-        /// </value>
-        [Required]
-        public string InstanceName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the database identifier.
-        /// </summary>
-        /// <value>
-        /// The database identifier.
-        /// </value>
-        [Required]
-        public string DatabaseName { get; set; }
-        
-        /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
@@ -158,7 +169,7 @@
         /// </returns>
         public override string ToString()
         {
-            return $"AppId: {AppId}, TenantId: {TenantId}, Cosmos InstanceName: {InstanceName}";
+            return $"AppId: {AppId}, TenantId: {TenantId}, SubscriptionId: {SubscriptionId}, Cosmos InstanceName: {InstanceName}, Database: {DatabaseName}";
         }
     }
 }
