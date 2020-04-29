@@ -42,6 +42,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange
@@ -72,7 +73,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
@@ -85,6 +86,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange
@@ -106,11 +108,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure a list of table names are gathered as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListTableNames()
         {
@@ -118,19 +121,23 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
+                // Arrange/Act
                 var containerNames = await _cosmosClient.ListTableNames();
 
+                // Assert
                 containerNames.Should().Contain(containerName);
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure count items returns the expected result.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CountItems()
         {
@@ -138,43 +145,46 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                //Create an entity to count
+                // Arrange
                 var key = Guid.NewGuid().ToString();
                 var entity = new SampleEntity() { Key = key, Name = "Name", OtherField = "other1", OtherField2 = 1 };
-                await _cosmosClient.UpsertEntity(containerName, entity);
-
                 var actionHit = false;
 
+                // Act
+                await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.CountItems(containerName, (count) => { actionHit = true; });
+                await Task.Delay(1000);
 
-                Thread.Sleep(1000);
-
+                // Assert
                 actionHit.Should().BeTrue();
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure upserting a single entity works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_UpsertSingle()
         {
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
-            var key = Guid.NewGuid().ToString();
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
+                // Arrange
+                var key = Guid.NewGuid().ToString();
                 var entity = new SampleEntity() { Key = key, Name = "Name", OtherField = "other1", OtherField2 = 1 };
 
-                await _cosmosClient.UpsertEntity(containerName, entity);
-
-                //Act - ensure there's an object to check for.                       
+                // Act - ensure there's an object to check for.         
+                await _cosmosClient.UpsertEntity(containerName, entity);              
                 var exists = await _cosmosClient.Exists(containerName, key);
 
                 // Assert
@@ -182,11 +192,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable with filter works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesEnumerableNoToken()
         {
@@ -194,20 +205,18 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
+                // Act - ensure there's an object to check for.
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
-
-                //Act - ensure there's an object to check for.           
+                
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'");
 
                 // Assert
@@ -215,11 +224,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities first items, with filter, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesRetrieveFirstValid()
         {
@@ -227,22 +237,19 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
+                // Act - ensure there's an object to check for.
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
-
-                //Act - ensure there's an object to check for.           
+                
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'");
-
                 var firstEntity = entities.First();
 
                 // Assert
@@ -250,11 +257,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable with filter works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesRetrieveFirstFailWhenIsNoEntity()
         {
@@ -262,22 +270,26 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.           
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'");
 
+                // Assert
                 Assert.Throws<InvalidOperationException>(() => entities.First());
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable, with cancellation token, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesEnumerableWithToken()
         {
@@ -285,22 +297,19 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
-
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
                 var token = new CancellationTokenSource();
 
-                //Act - ensure there's an object to check for.           
+                //Act - ensure there's an object to check for.    
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+                       
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'", token);
 
                 // Assert
@@ -308,11 +317,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable, with cancellation token and no filter, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesEnumerableWithTokenAndNoQuery()
         {
@@ -320,22 +330,21 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
+                // Arrange
                 var key = Guid.NewGuid().ToString();
                 var key2 = Guid.NewGuid().ToString();
-
                 var nameKey = Guid.NewGuid().ToString();
-
                 var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
                 var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
-
                 var token = new CancellationTokenSource();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.   
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+        
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, token);
 
                 // Assert
@@ -343,40 +352,36 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable, with columns, works as expected.</summary>
         [Fact]
-        public async Task Test_CosmosStorage_ListEntitiesEnumerableWithCollumnsToken()
+        public async Task Test_CosmosStorage_ListEntitiesEnumerableWithColumnsToken()
         {
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
-
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
                 var columns = new List<string>() { "Name", "Key" };
-
                 var token = new CancellationTokenSource();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.  
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+         
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, columns, $"WHERE c.Name = '{nameKey}'", token).ToList();
 
-                //Confirm entity is retrieved with only the selected fields
+                // Assert - Confirm entity is retrieved with only the selected fields
                 entities.Count().Should().Be(2);
 
                 entities[0].Key.Should().NotBeNullOrEmpty();
@@ -389,38 +394,35 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as enumerable, with columns and filter, works as expected.</summary>
         [Fact]
-        public async Task Test_CosmosStorage_ListEntitiesEnumerableWithCollumnsAndNoToken()
+        public async Task Test_CosmosStorage_ListEntitiesEnumerableWithColumnsAndNoToken()
         {
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
-
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
                 var columns = new List<string>() { "Name", "Key" };
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.     
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+      
                 var entities = _cosmosClient.ListEntities<SampleEntity>(containerName, columns, $"WHERE c.Name = '{nameKey}'").ToList();
 
-                //Confirm entity is retrieved with only the selected fields
+                // Assert - Confirm entity is retrieved with only the selected fields
                 entities.Count().Should().Be(2);
 
                 entities[0].Key.Should().NotBeNullOrEmpty();
@@ -433,11 +435,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as onservable, with filter, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesObservableNoToken()
         {
@@ -445,24 +448,20 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
-
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
                 int count = 0;
                 int loops = 0;
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.       
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+    
                 var entities = _cosmosClient.ListEntitiesObservable<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'").Subscribe(e =>
                 {
                     count++;
@@ -471,7 +470,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 // Wait for subscription.
                 do
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                     loops++;
                 } while (loops < 5 || count == 0);
 
@@ -481,11 +480,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as onservable, with filter and cancellation token, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesObservableWithToken()
         {
@@ -493,26 +493,24 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 int count = 0;
                 int loops = 0;
 
                 var token = new CancellationTokenSource();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.   
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);    
+                
                 var entities = _cosmosClient.ListEntitiesObservable<SampleEntity>(containerName, $"SELECT * FROM c WHERE c.Name = '{nameKey}'", token).Subscribe(e =>
                 {
                     count++;
@@ -521,7 +519,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 // Wait for subscription.
                 do
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                     loops++;
                 } while (loops < 5 || count == 0);
 
@@ -531,11 +529,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure listing entities as onservable, no filter, works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_ListEntitiesObservableWithTokenAndNoQuery()
         {
@@ -543,26 +542,22 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 int count = 0;
                 int loops = 0;
-
                 var token = new CancellationTokenSource();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.     
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+      
                 var entities = _cosmosClient.ListEntitiesObservable<SampleEntity>(containerName, token).Subscribe(e =>
                 {
                     count++;
@@ -571,7 +566,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 // Wait for subscription.
                 do
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                     loops++;
                 } while (loops < 5 || count == 0);
 
@@ -581,41 +576,37 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure list entities observable by specifying columns returns as expected.</summary>
         [Fact]
-        public async Task Test_CosmosStorage_ListEntitiesObservableWithCollumnsTokenAndQuery()
+        public async Task Test_CosmosStorage_ListEntitiesObservableWithColumnsTokenAndQuery()
         {
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 int count = 0;
                 int loops = 0;
-
                 var token = new CancellationTokenSource();
-
                 var columns = new List<string>() { "Name", "Key" };
                 var retrievedEntities = new List<SampleEntity>();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.    
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+       
                 var entities = _cosmosClient.ListEntitiesObservable<SampleEntity>(containerName, columns, $"WHERE c.Name = '{nameKey}'", token).Subscribe(e =>
                 {
                     retrievedEntities.Add(e);
@@ -625,11 +616,11 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 // Wait for subscription.
                 do
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                     loops++;
                 } while (loops < 5 || count == 0);
 
-                //Confirm entity is retrieved with only the selected fields
+                // Assert - Confirm entity is retrieved with only the selected fields.
                 count.Should().Be(2);
 
                 retrievedEntities[0].Key.Should().NotBeNullOrEmpty();
@@ -642,41 +633,39 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure list entities by specifying columns returns as expected.</summary>
         [Fact]
-        public async Task Test_CosmosStorage_ListEntitiesObservableWithCollumnsNoTokenAndNoQuery()
+        public async Task Test_CosmosStorage_ListEntitiesObservableWithColumnsNoTokenAndNoQuery()
         {
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
-                await _cosmosClient.UpsertEntity(containerName, entity);
-                await _cosmosClient.UpsertEntity(containerName, entity2);
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 int count = 0;
                 int loops = 0;
 
                 var token = new CancellationTokenSource();
-
                 var columns = new List<string>() { "Name", "Key" };
                 var retrievedEntities = new List<SampleEntity>();
 
-                //Act - ensure there's an object to check for.           
+                // Act - ensure there's an object to check for.     
+                await _cosmosClient.UpsertEntity(containerName, entity);
+                await _cosmosClient.UpsertEntity(containerName, entity2);
+      
                 var entities = _cosmosClient.ListEntitiesObservable<SampleEntity>(containerName, columns, token).Subscribe(e =>
                 {
                     retrievedEntities.Add(e);
@@ -686,11 +675,11 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 // Wait for subscription.
                 do
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                     loops++;
                 } while (loops < 5 || count == 0);
 
-                //Confirm entites are retrieved with only the selected fields
+                // Assert - Confirm entites are retrieved with only the selected fields
                 count.Should().Be(2);
 
                 retrievedEntities[0].Key.Should().NotBeNullOrEmpty();
@@ -703,11 +692,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure count entities with query filter and cancellation token returns as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CountEntitiesWithQueryAndToken()
         {
@@ -715,23 +705,19 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var token = new CancellationTokenSource();
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
+                // Act
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
 
-                var token = new CancellationTokenSource();
-
-                //Act - ensure there's an object to check for.           
                 var entities = await _cosmosClient.CountItemsQuery(containerName, "SELECT * FROM c", token);
 
                 // Assert
@@ -739,11 +725,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure count entities with query filter returns as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CountEntitiesWithQueryNoToken()
         {
@@ -751,21 +738,18 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
-
+                // Act
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
-
-                //Act - ensure there's an object to check for.           
+                
                 var entities = await _cosmosClient.CountItemsQuery(containerName, "SELECT * FROM c");
 
                 // Assert
@@ -773,11 +757,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure count entities (no filter) returns as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CountEntitiesWithNoQueryAndToken()
         {
@@ -785,16 +770,14 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
 
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
@@ -809,11 +792,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure count entities using a key returns as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CountEntitiesWithKey()
         {
@@ -821,16 +805,13 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
-                var key = Guid.NewGuid().ToString();
-                var key2 = Guid.NewGuid().ToString();
-
+                // Arrange
                 var nameKey = Guid.NewGuid().ToString();
-
-                var entity = new SampleEntity() { Key = key, Name = nameKey, OtherField = "other1" };
-                var entity2 = new SampleEntity() { Key = key2, Name = nameKey, OtherField = "other1" };
+                var entity = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
+                var entity2 = new SampleEntity() { Key = Guid.NewGuid().ToString(), Name = nameKey, OtherField = "other1" };
 
                 await _cosmosClient.UpsertEntity(containerName, entity);
                 await _cosmosClient.UpsertEntity(containerName, entity2);
@@ -843,11 +824,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure get entity returns the item correctly as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_GetEntity()
         {
@@ -855,7 +837,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange - create test entity.
@@ -871,15 +853,15 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 result.Key.Should().Be(entity.Key);
                 result.Name.Should().Be(entity.Name);
                 result.OtherField.Should().Be(entity.OtherField);
-
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure searching an non-existent item returns null.</summary>
         [Fact]
         public async Task Test_CosmosStorage_GetEntityThatDoesntExistReturnsNull()
         {
@@ -887,7 +869,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange - create test entity.
@@ -902,11 +884,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure deleting a single item works as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_DeleteSingle()
         {
@@ -914,7 +897,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create container
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange - create test entity.
@@ -933,11 +916,12 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Verify check exists returns expected results.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CheckExists()
         {
@@ -945,7 +929,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
 
             try
             {
-                //create container
+                // Create test container.
                 await _cosmosClient.CreateTable(containerName);
 
                 // Arrange - create test entity.
@@ -964,118 +948,130 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure items are created and partition key is set as expected.</summary>
         [Fact]
         public async Task Test_CosmosStorage_PartitionTests()
         {
+            // Arrange
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container with name as partition key
+                // Act - Create container with name as partition key
                 await _cosmosClient.CreateTable(containerName + "/Name");
-
-                //add an object            
+                
+                // Add an object.
                 var key = "name1/" + Guid.NewGuid().ToString();
                 var entity = new SampleEntity() { Key = key, Name = "name1", OtherField = "other1" };
                 await _cosmosClient.UpsertEntity(containerName, entity);
 
-                //add a second object
+                // Add a second object.
                 var secondKey = "name2/" + Guid.NewGuid().ToString();
                 var secondEntity = new SampleEntity() { Key = secondKey, Name = "name2", OtherField = "other1" };
                 await _cosmosClient.UpsertEntity(containerName, secondEntity);
 
-                //check first object exists
+                // Check first object exists.
                 var exists = await _cosmosClient.Exists(containerName, key);
-                exists.Should().Be(true);
 
-                //retrieve the second object
+                // Retrieve the second object.
                 var retrievedEntity = await _cosmosClient.GetEntity<SampleEntity>(containerName, secondKey);
                 var expectedId = secondKey.Replace("name2/", "");
-
+                await _cosmosClient.DeleteEntity(containerName, key);
+                var existsAfterDeletion = await _cosmosClient.Exists(containerName, key);
+                
+                // Assert
+                exists.Should().Be(true);
                 retrievedEntity.Key.Should().Be(expectedId);
                 retrievedEntity.Id.Should().Be(expectedId);
                 retrievedEntity.Name.Should().Be("name2");
                 retrievedEntity.OtherField.Should().Be("other1");
                 retrievedEntity.OtherField2.Should().BeNull();
-
-                //delete first object
-                await _cosmosClient.DeleteEntity(containerName, key);
-
-                //confirm deletion
-                var existsAfterDeletion = await _cosmosClient.Exists(containerName, key);
                 existsAfterDeletion.Should().Be(false);
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure table is created without a partition key set.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CreateContainerAndDeleteContainerWithNoPartition()
         {
+            // Arrange
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Act - create container.
                 await _cosmosClient.CreateTable(containerName);
+                var tableExists = await (_cosmosClient as CosmosStorage).TableExists(containerName);
 
-                //???
+                // Assert
+                tableExists.Should().BeTrue();
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure table is created with a partition key set.</summary>
         [Fact]
         public async Task Test_CosmosStorage_CreateContainerAndDeleteContainerWithPartition()
         {
+            // Arrange
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Act - Create container with partition.
                 await _cosmosClient.CreateTable(containerName + "/ParitionKey");
-                //???
+                var tableExists = await (_cosmosClient as CosmosStorage).TableExists(containerName);
+
+                // Assert
+                tableExists.Should().BeTrue();
             }
             finally
             {
-                //Cleanup table
+                // Remove test container. afterwards.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }
 
+        /// <summary>Ensure the table is created without passing a partition key.  Partition will default to "_PartitionKey".</summary>
         [Fact]
         public async Task Test_CosmosStorage_AddToCreatedTableNoPartition()
         {
+            // Arrange
             var containerName = Guid.NewGuid().ToString().Replace("-", string.Empty);
 
             try
             {
-                //create container
+                // Act - create container.
                 await _cosmosClient.CreateTable(containerName);
 
-                //add an object            
+                // Add an object to verify table exists.
                 var key = Guid.NewGuid().ToString();
                 var entity = new SampleEntity() { Key = key, Name = "Name", OtherField = "other1" };
                 await _cosmosClient.UpsertEntity(containerName, entity);
 
-                //check first object exists
+                // Check first object exists.
                 var exists = await _cosmosClient.Exists(containerName, key);
+
+                // Assert - item should exist in the table.
                 exists.Should().Be(true);
             }
             finally
             {
-                //Cleanup table
+                // Remove test container.
                 await _cosmosClient.DeleteTable(containerName);
             }
         }

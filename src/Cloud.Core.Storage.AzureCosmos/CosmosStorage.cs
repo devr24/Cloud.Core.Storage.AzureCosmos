@@ -63,7 +63,7 @@
         /// <inheritdoc cref="ITableStorage.GetEntity{T}"/>
         public async Task<T> GetEntity<T>(string tableName, string key) where T : class, ITableItem, new()
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             var partitionKey = ExtractPartitionKey(key, out string modifiedKey);
             key = modifiedKey;
             try
@@ -84,7 +84,7 @@
         /// <returns>Task&lt;System.Boolean&gt;.</returns>
         public async Task<bool> Exists(string tableName, string key)
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             var partitionKey = ExtractPartitionKey(key, out string modifiedKey);
             key = modifiedKey;
 
@@ -114,7 +114,7 @@
         /// <returns>Task.</returns>
         public async Task DeleteEntity(string tableName, string key)
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             var partitionKey = ExtractPartitionKey(key, out string modifiedKey);
 
             await cosmosContainer.DeleteItemAsync<object>(modifiedKey, partitionKey);
@@ -129,7 +129,7 @@
         /// <returns>Task.</returns>
         public async Task DeleteEntities(string tableName, List<string> keys, int batchSize = 10)
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             var exceptions = new ConcurrentQueue<Exception>();
 
             // Delete each item
@@ -169,7 +169,7 @@
         /// <returns>Task.</returns>
         public async Task UpsertEntity<T>(string tableName, T data) where T : class, ITableItem
         {            
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
 
             // Extract partition key will split the passed in partition key ("partition/id") and return the modified 
             // version of the key ("id" only) as well as the partition key ("partition").
@@ -193,7 +193,7 @@
         /// <returns>Task.</returns>
         public async Task UpsertEntities<T>(string tableName, List<T> data, int batchSize = 10) where T : class, ITableItem
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             var exceptions = new ConcurrentQueue<Exception>();
 
             // Delete each item
@@ -305,7 +305,7 @@
                 {
                     var cancelToken = token ?? new CancellationTokenSource();
 
-                    var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+                    var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
 
                     var cosmosQuery = new QueryDefinition(filterQuery);
 
@@ -399,7 +399,7 @@
         /// <returns></returns>
         public async Task<IEnumerable<string>> ListTableNames()
         {
-            var database = CloudTableClient.GetDatabase(DatabaseName);
+            var database = CosmosClient.GetDatabase(DatabaseName);
             var iterator = database.GetContainerQueryIterator<ContainerProperties>();
             var containers = await iterator.ReadNextAsync().ConfigureAwait(false);
             var names = new List<string>();
@@ -466,7 +466,7 @@
         /// <returns>Async Task.</returns>
         public async Task DeleteTable(string tableName)
         {
-            var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
             await cosmosContainer.DeleteContainerAsync();
         }
 
@@ -494,8 +494,18 @@
                 tableName = keyParts[0];
             }
 
-            var cosmosDatabase = CloudTableClient.GetDatabase(DatabaseName);
+            var cosmosDatabase = CosmosClient.GetDatabase(DatabaseName);
             await cosmosDatabase.CreateContainerIfNotExistsAsync(tableName, partitionKeyPath);
+        }
+
+        /// <summary>
+        /// Check to see if the table exists in the database.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <returns><c>true</c> if exists, <c>false</c> otherwise.</returns>
+        public async Task<bool> TableExists(string tableName)
+        {
+            return (await ListTableNames()).Any(s => s == tableName);
         }
 
         /// <summary>
@@ -511,7 +521,7 @@
             try
             {
                 var cancelToken = token ?? new CancellationTokenSource();
-                var cosmosContainer = CloudTableClient.GetContainer(DatabaseName, tableName);
+                var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
                 var cosmosQuery = new QueryDefinition(tblQuery);
 
                 FeedIterator<CountItem> queryIterator;
@@ -592,7 +602,7 @@
         private readonly string _subscriptionId;
         private readonly bool _createIfNotExists;
 
-        internal CosmosClient CloudTableClient
+        internal CosmosClient CosmosClient
         {
             get
             {
