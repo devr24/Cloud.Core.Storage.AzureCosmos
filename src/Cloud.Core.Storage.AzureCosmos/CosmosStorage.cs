@@ -718,6 +718,7 @@
         /// <exception cref="InvalidOperationException">
         /// If the Storage Namespace can not be resolved or access keys are not configured.
         /// </exception>
+        [ExcludeFromCodeCoverage]
         internal async Task<string> BuildStorageConnection()
         {
             try

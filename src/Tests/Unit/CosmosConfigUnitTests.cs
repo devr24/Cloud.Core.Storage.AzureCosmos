@@ -41,6 +41,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             validationRes = msiConfig.Validate();
             validationRes.IsValid.Should().BeTrue();
             validationRes.Errors.ToList().Count.Should().Be(0);
+            msiConfig.ToString().Length.Should().BeGreaterThan(0);
         }
 
         /// <summary>Verify validation works as expected for connection config.</summary>
@@ -64,6 +65,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             validationRes = connectionConfig.Validate();
             validationRes.IsValid.Should().BeTrue();
             validationRes.Errors.ToList().Count.Should().Be(0);
+            connectionConfig.ToString().Length.Should().BeGreaterThan(0);
         }
 
         /// <summary>Verify validation works as expected for service principle.</summary>
@@ -107,6 +109,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             validationRes = spConfig.Validate();
             validationRes.IsValid.Should().BeTrue();
             validationRes.Errors.ToList().Count.Should().Be(0);
+            spConfig.ToString().Length.Should().BeGreaterThan(0);
         }
 
         /// <summary>Add multiple instances and ensure table storage named instance factory resolves as expected.</summary>
