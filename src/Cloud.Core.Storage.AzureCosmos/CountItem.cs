@@ -7,7 +7,7 @@ namespace Cloud.Core.Storage.AzureCosmos
     /// Implements the <see cref="Cloud.Core.ITableItem" />
     /// </summary>
     /// <seealso cref="Cloud.Core.ITableItem" />
-    public class CountItem : ITableItem
+    internal class CountItem : ITableItem
     {
         /// <summary>
         /// Gets or sets the identifier key.

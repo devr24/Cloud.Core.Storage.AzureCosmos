@@ -335,7 +335,7 @@
             }
             catch (Exception e)
             {
-                Logger?.LogError(e, $"Error {e.Message} occurred listing entities, tablename: {tableName}");
+                Logger?.LogError(e, $"Error {e.Message} occurred listing entities, table name: {tableName}");
                 throw;
             }
         }
@@ -551,7 +551,7 @@
             }
             catch (Exception e)
             {
-                Logger?.LogError(e, $"Error {e.Message} occurred listing entities, tablename: {tableName}");
+                Logger?.LogError(e, $"Error {e.Message} occurred listing entities, table name: {tableName}");
                 throw;
             }
         }

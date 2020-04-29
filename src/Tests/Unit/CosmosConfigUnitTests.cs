@@ -199,5 +199,21 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.Unit
             serviceCollection.AddCosmosStorageSingleton("test", "test", "test", "test");
             serviceCollection.ContainsService(typeof(ITableStorage)).Should().BeTrue();
         }
+
+        /// <summary>Verify properties can be got and set as expected.</summary>
+        [Fact]
+        public void Test_CountItem_Properties()
+        {
+            // Arrange
+            var count = new CountItem();
+
+            // Act
+            count.Id = "a";
+            count.Key = "b";
+
+            // Assert
+            count.Id.Should().Be("a");
+            count.Key.Should().Be("b");
+        }
     }
 }
