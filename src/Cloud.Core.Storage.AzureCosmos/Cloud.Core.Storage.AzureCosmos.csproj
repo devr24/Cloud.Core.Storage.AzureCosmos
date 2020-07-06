@@ -20,17 +20,17 @@
 	    Full API Documentation can be found here:
 	    https://cloud1core.blob.core.windows.net/docs/Cloud.Core.Storage.AzureCosmos/api/index.html
     </PackageReleaseNotes>
-    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://dev.azure.com/cloudcoreproject/CloudCore/</PackageProjectUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cloud.Core" Version="3.1.3530.471" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.8.0" />
+    <PackageReference Include="Cloud.Core" Version="3.1.3593.616" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.10.1" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.33.0" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.7" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.5.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.8" />
     <PackageReference Include="System.Reactive.Core" Version="4.4.1" />
   </ItemGroup>
 

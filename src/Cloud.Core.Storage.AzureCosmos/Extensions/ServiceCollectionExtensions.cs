@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.Extensions.DependencyInjection
 {
     using System;
-    using System.Linq;
     using Cloud.Core;
     using Cloud.Core.Storage.AzureCosmos;
     using Cloud.Core.Storage.AzureCosmos.Config;
@@ -36,7 +35,7 @@
                 instance.Name = key;
 
             services.AddSingleton<ITableStorage>(instance);
-            AddFactoryIfNotAdded(services);
+            services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
         }
 
@@ -59,7 +58,7 @@
                 SubscriptionId = subscriptionId,
                 DatabaseName = databaseName
             });
-            AddFactoryIfNotAdded(services);
+            services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
         }
 
@@ -72,7 +71,7 @@
         public static IServiceCollection AddCosmosStorageSingleton(this IServiceCollection services, MsiConfig config)
         {
             services.AddSingleton<ITableStorage>(new CosmosStorage(config));
-            AddFactoryIfNotAdded(services);
+            services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
         }
 
@@ -85,7 +84,7 @@
         public static IServiceCollection AddCosmosStorageSingleton(this IServiceCollection services, ServicePrincipleConfig config)
         {
             services.AddSingleton<ITableStorage>(new CosmosStorage(config));
-            AddFactoryIfNotAdded(services);
+            services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
         }
 
@@ -98,32 +97,8 @@
         public static IServiceCollection AddCosmosStorageSingleton(this IServiceCollection services, ConnectionConfig config)
         {
             services.AddSingleton<ITableStorage>(new CosmosStorage(config));
-            AddFactoryIfNotAdded(services);
+            services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
-        }
-
-        /// <summary>
-        /// Add the generic service factory from Cloud.Core for the ITableStorage type.  This allows multiple named instances of the same instance.
-        /// </summary>
-        /// <param name="services">Service collection to extend.</param>
-        private static void AddFactoryIfNotAdded(IServiceCollection services)
-        {
-            if (!services.ContainsService(typeof(NamedInstanceFactory<ITableStorage>)))
-            {
-                // Service Factory doesn't exist, so we add it to ensure it's always available.
-                services.AddSingleton<NamedInstanceFactory<ITableStorage>>();
-            }
-        }
-
-        /// <summary>
-        /// Search through the service collection for a particular object type.
-        /// </summary>
-        /// <param name="services">IServiceCollection to check.</param>
-        /// <param name="objectTypeToFind">Type of object to find.</param>
-        /// <returns>Boolean true if service exists and false if not.</returns>
-        public static bool ContainsService(this IServiceCollection services, Type objectTypeToFind)
-        {
-            return services.Any(x => x.ServiceType == objectTypeToFind);
         }
     }
 }
