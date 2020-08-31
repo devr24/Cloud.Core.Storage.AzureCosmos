@@ -174,9 +174,11 @@
             // Extract partition key will split the passed in partition key ("partition/id") and return the modified 
             // version of the key ("id" only) as well as the partition key ("partition").
             var partitionKey = ExtractPartitionKey(data.Key, out string modifiedKey);
+            var originalKey = data.Key.Clone() as string;
             data.Key = modifiedKey;
 
             await cosmosContainer.CreateItemAsync(data, partitionKey);
+            data.Key = originalKey;
         }
 
         /// <summary>
@@ -203,9 +205,11 @@
                     try
                     {
                         var partitionKey = ExtractPartitionKey(d.Key, out string modifiedKey);
+                        var originalKey = d.Key.Clone() as string;
                         d.Key = modifiedKey;
                         
                         cosmosContainer.CreateItemAsync(d, partitionKey).GetAwaiter().GetResult();
+                        d.Key = originalKey;
                     }
                     catch (Exception e)
                     {
@@ -481,7 +485,7 @@
             string partitionKeyPath = DefaultPartitionKeyPath;
 
             //Different to the extract partition key method
-            if (tableName.Contains("/"))
+            if (tableName.IndexOf("/", StringComparison.Ordinal) > -1)
             {
                 var keyParts = tableName.Split("/");
 
@@ -566,7 +570,7 @@
         {
             var partitionKey = PartitionKey.None;
 
-            if (key.Contains("/"))
+            if (key.IndexOf("/", StringComparison.Ordinal) > -1)
             {
                 var keyParts = key.Split("/");
 
@@ -639,12 +643,7 @@
                                 .WithConnectionModeDirect()
                                 .Build();
 
-            if (client == null)
-            {
-                throw new InvalidOperationException("Cannot build Cosmos Client using connection string");
-            }
-
-            _cloudClient = client;
+            _cloudClient = client ?? throw new InvalidOperationException("Cannot build Cosmos Client using connection string");
 
             // Create the database if it does not exist and been instructed to.
             if (_createIfNotExists)

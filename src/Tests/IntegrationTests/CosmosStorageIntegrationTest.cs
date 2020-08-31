@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Cloud.Core.Storage.AzureCosmos.Config;
 using Cloud.Core.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -966,12 +968,14 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 await _cosmosClient.CreateTable(containerName + "/Name");
                 
                 // Add an object.
-                var key = "name1/" + Guid.NewGuid().ToString();
+                var id1 = Guid.NewGuid().ToString();
+                var key = "name1/" + id1;
                 var entity = new SampleEntity() { Key = key, Name = "name1", OtherField = "other1" };
                 await _cosmosClient.UpsertEntity(containerName, entity);
 
                 // Add a second object.
-                var secondKey = "name2/" + Guid.NewGuid().ToString();
+                var id2 = Guid.NewGuid().ToString();
+                var secondKey = "name2/" + id2;
                 var secondEntity = new SampleEntity() { Key = secondKey, Name = "name2", OtherField = "other1" };
                 await _cosmosClient.UpsertEntity(containerName, secondEntity);
 
@@ -1076,6 +1080,53 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             }
         }
 
+        /// <summary>Ensure the creation of a table using a partition key and non partition key is setup as expected.</summary>
+        [Fact]
+        public async Task Test_CosmosStorage_WithAndWithoutPartitionKey()
+        {
+            var containerName1 = Guid.NewGuid().ToString();
+            var containerName2 = Guid.NewGuid().ToString();
+
+            try
+            {
+                // Arrange - Setup test enitity.
+                var entityWithPartition = new SampleEntity()
+                {
+                    Name = "Name123",
+                    OtherField = "Other1",
+                    Key = "Name123/12345"
+                };
+                var entityNoPartition = new SampleEntity()
+                {
+                    Name = "Name123",
+                    OtherField = "Other1",
+                    Key = "12345"
+                };
+
+                // Act - setup containers.
+                await _cosmosClient.CreateTable($"{containerName1}/Name");
+                await _cosmosClient.CreateTable($"{containerName2}");
+
+                // Upsert entity.
+                await _cosmosClient.UpsertEntity(containerName1, entityWithPartition);
+                await _cosmosClient.UpsertEntity(containerName2, entityNoPartition);
+
+                // Retrieve entities back.
+                var s1 = await _cosmosClient.GetEntity<SampleEntity>(containerName1, entityWithPartition.Key);
+                var s2 = await _cosmosClient.GetEntity<SampleEntity>(containerName2, entityNoPartition.Key);
+
+                // Assert - the values are correct.
+                s1.Should().NotBeNull();
+                s2.Should().NotBeNull();
+            }
+            finally
+            {
+                // Remove test container.
+                await _cosmosClient.DeleteTable(containerName1);
+                await _cosmosClient.DeleteTable(containerName2);
+            }
+        }
+
         private class SampleEntity : ITableItem
         {
             public string Key { get; set; }
@@ -1084,8 +1135,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             public int? OtherField2 { get; set; }
             public bool OtherField3 { get; set; }
 
-            [JsonProperty("id")]
-            public string Id => Key;
+            [JsonProperty("id")] public string Id => Key.Split('/').LastOrDefault();
         }
     }
 }
