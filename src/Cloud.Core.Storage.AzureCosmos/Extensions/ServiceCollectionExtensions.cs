@@ -48,9 +48,11 @@
         /// <param name="instanceName">Name of the table storage instance to connect to.</param>
         /// <param name="tenantId">Tenant Id the instance lives in.</param>
         /// <param name="subscriptionId">Subscription Id for the tenant.</param>
-        /// <param name="databaseName">The name of the database</param>      
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="createDbIfNotExists">Create the database and tables if they don't already exists.</param>
+        /// <param name="createTables">Set a list of table names that are to be created on initialisation of the Cosmos client.</param>
         /// <returns>IServiceCollection.</returns>
-        public static IServiceCollection AddCosmosStorageSingleton(this IServiceCollection services, string instanceName, string tenantId, string subscriptionId, string databaseName)
+        public static IServiceCollection AddCosmosStorageSingleton(this IServiceCollection services, string instanceName, string tenantId, string subscriptionId, string databaseName, bool createDbIfNotExists = true, string[] createTables = null)
         {
             services.AddCosmosStorageSingleton(new MsiConfig
             {

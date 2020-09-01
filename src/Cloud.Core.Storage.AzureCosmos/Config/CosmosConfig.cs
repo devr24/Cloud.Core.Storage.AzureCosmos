@@ -34,6 +34,12 @@
         /// </summary>
         /// <value><c>true</c> if [create if not exists]; otherwise, <c>false</c>.</value>
         public bool CreateDatabaseIfNotExists { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of tables to be created during initialisation.
+        /// </summary>
+        /// <value>The list of tables to create.</value>
+        public string[] CreateTables { get; set; }
     }
 
     /// <summary>
@@ -46,7 +52,7 @@
         /// </summary>
         /// <value>
         /// The tenant identifier.
-        /// </value>        
+        /// </value>
         [Required]
         public string TenantId { get; set; }
 

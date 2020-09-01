@@ -26,8 +26,6 @@
     /// </summary>
     public class CosmosStorage : CosmosStorageBase, ITableStorage
     {
-        private const string DefaultPartitionKeyPath = "/_partitionKey";
-
         /// <summary>
         /// Initializes a new instance of <see cref="CosmosStorage" /> with Service Principle authentication.
         /// </summary>
@@ -177,7 +175,7 @@
             var originalKey = data.Key.Clone() as string;
             data.Key = modifiedKey;
 
-            await cosmosContainer.CreateItemAsync(data, partitionKey);
+            await cosmosContainer.UpsertItemAsync(data, partitionKey);
             data.Key = originalKey;
         }
 
@@ -398,25 +396,6 @@
         }
 
         /// <summary>
-        /// List the name of all containers within a given database.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IEnumerable<string>> ListTableNames()
-        {
-            var database = CosmosClient.GetDatabase(DatabaseName);
-            var iterator = database.GetContainerQueryIterator<ContainerProperties>();
-            var containers = await iterator.ReadNextAsync().ConfigureAwait(false);
-            var names = new List<string>();
-
-            foreach (var c in containers)
-            {
-                names.Add(c.Id);
-            }
-
-            return names;
-        }
-
-        /// <summary>
         /// Count items in a particular table.
         /// </summary> 
         /// <param name="tableName">Name of the table to search within.</param>
@@ -461,55 +440,6 @@
         public async Task<long> CountItems(string tableName, Action<long> countIncrement, CancellationTokenSource token = default)
         {
             return await Counter(tableName, "SELECT c.id FROM c", countIncrement, token);
-        }
-
-        /// <summary>
-        /// Delete the table passed in.
-        /// </summary>
-        /// <param name="tableName">Name of the table to delete.</param>
-        /// <returns>Async Task.</returns>
-        public async Task DeleteTable(string tableName)
-        {
-            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
-            await cosmosContainer.DeleteContainerAsync();
-        }
-
-        /// <summary>
-        /// Create the table name passed in.
-        /// </summary>
-        /// <param name="tableName"></param>
-        /// <returns></returns>
-        public async Task CreateTable(string tableName)
-        {
-            //Default if none is given
-            string partitionKeyPath = DefaultPartitionKeyPath;
-
-            //Different to the extract partition key method
-            if (tableName.IndexOf("/", StringComparison.Ordinal) > -1)
-            {
-                var keyParts = tableName.Split("/");
-
-                if (keyParts.Length > 2)
-                {
-                    throw new InvalidOperationException("Key and partition key cannot be parsed because there is more than one /");
-                }
-
-                partitionKeyPath = "/" + keyParts[1];
-                tableName = keyParts[0];
-            }
-
-            var cosmosDatabase = CosmosClient.GetDatabase(DatabaseName);
-            await cosmosDatabase.CreateContainerIfNotExistsAsync(tableName, partitionKeyPath);
-        }
-
-        /// <summary>
-        /// Check to see if the table exists in the database.
-        /// </summary>
-        /// <param name="tableName">Name of the table.</param>
-        /// <returns><c>true</c> if exists, <c>false</c> otherwise.</returns>
-        public async Task<bool> TableExists(string tableName)
-        {
-            return (await ListTableNames()).Any(s => s == tableName);
         }
 
         /// <summary>
@@ -605,6 +535,9 @@
         private readonly string _instanceName;
         private readonly string _subscriptionId;
         private readonly bool _createIfNotExists;
+        private readonly string[] _createTableNames;
+
+        private const string DefaultPartitionKeyPath = "/_partitionKey";
 
         internal CosmosClient CosmosClient
         {
@@ -650,6 +583,15 @@
             {
                 _cloudClient.CreateDatabaseIfNotExistsAsync(DatabaseName).GetAwaiter().GetResult();
             }
+
+            // Create any tables required up front.
+            if (!_createTableNames.IsNullOrDefault())
+            {
+                foreach (var tableName in _createTableNames)
+                {
+                    CreateTable(tableName).GetAwaiter().GetResult();
+                }
+            }
         }
 
         /// <summary>
@@ -668,6 +610,7 @@
             DatabaseName = config.DatabaseName;
 
             _createIfNotExists = config.CreateDatabaseIfNotExists;
+            _createTableNames = config.CreateTables;
         }
 
         /// <summary>
@@ -688,6 +631,7 @@
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
             _createIfNotExists = config.CreateDatabaseIfNotExists;
+            _createTableNames = config.CreateTables;
         }
 
         /// <summary>
@@ -708,6 +652,76 @@
             _instanceName = config.InstanceName;
             _subscriptionId = config.SubscriptionId;
             _createIfNotExists = config.CreateDatabaseIfNotExists;
+            _createTableNames = config.CreateTables;
+        }
+
+
+        /// <summary>
+        /// Delete the table passed in.
+        /// </summary>
+        /// <param name="tableName">Name of the table to delete.</param>
+        /// <returns>Async Task.</returns>
+        public async Task DeleteTable(string tableName)
+        {
+            var cosmosContainer = CosmosClient.GetContainer(DatabaseName, tableName);
+            await cosmosContainer.DeleteContainerAsync();
+        }
+
+        /// <summary>
+        /// Create the table name passed in.
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        public async Task CreateTable(string tableName)
+        {
+            //Default if none is given
+            string partitionKeyPath = DefaultPartitionKeyPath;
+
+            //Different to the extract partition key method
+            if (tableName.IndexOf("/", StringComparison.Ordinal) > -1)
+            {
+                var keyParts = tableName.Split("/");
+
+                if (keyParts.Length > 2)
+                {
+                    throw new InvalidOperationException("Key and partition key cannot be parsed because there is more than one /");
+                }
+
+                partitionKeyPath = "/" + keyParts[1];
+                tableName = keyParts[0];
+            }
+
+            var cosmosDatabase = CosmosClient.GetDatabase(DatabaseName);
+            await cosmosDatabase.CreateContainerIfNotExistsAsync(tableName, partitionKeyPath);
+        }
+
+        /// <summary>
+        /// Check to see if the table exists in the database.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <returns><c>true</c> if exists, <c>false</c> otherwise.</returns>
+        public async Task<bool> TableExists(string tableName)
+        {
+            return (await ListTableNames()).Any(s => s == tableName);
+        }
+
+        /// <summary>
+        /// List the name of all containers within a given database.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<string>> ListTableNames()
+        {
+            var database = CosmosClient.GetDatabase(DatabaseName);
+            var iterator = database.GetContainerQueryIterator<ContainerProperties>();
+            var containers = await iterator.ReadNextAsync().ConfigureAwait(false);
+            var names = new List<string>();
+
+            foreach (var c in containers)
+            {
+                names.Add(c.Id);
+            }
+
+            return names;
         }
 
         /// <summary>
@@ -775,7 +789,8 @@
                 var azureManagement = Azure.Authenticate(client, string.Empty).WithSubscription(_subscriptionId);
 
                 // Get the storage namespace for the passed in instance name.
-                var storageNamespace = azureManagement.CosmosDBAccounts.List().FirstOrDefault(n => n.Name == _instanceName);
+                var accs = azureManagement.CosmosDBAccounts.List();
+                var storageNamespace = accs.FirstOrDefault(n => n.Name == _instanceName);
 
                 // If we cant find that name, throw an exception.
                 if (storageNamespace == null)

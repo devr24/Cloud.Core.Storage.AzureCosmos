@@ -17,12 +17,13 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
     public class CosmosStorageIntegrationTest
     {
         private readonly ITableStorage _cosmosClient;
+        private readonly ServicePrincipleConfig _config;
 
         public CosmosStorageIntegrationTest()
         {
             var readConfig = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
 
-            var config = new Config.ServicePrincipleConfig
+            _config = new Config.ServicePrincipleConfig
             {
                 InstanceName = readConfig.GetValue<string>("InstanceName"),
                 TenantId = readConfig.GetValue<string>("TenantId"),
@@ -33,7 +34,7 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
                 CreateDatabaseIfNotExists = true
             };
 
-            _cosmosClient = new CosmosStorage(config);
+            _cosmosClient = new CosmosStorage(_config);
         }
 
         /// <summary>Verify entities can be created and deleted as expected.</summary>
