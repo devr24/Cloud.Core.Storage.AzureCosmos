@@ -28,7 +28,8 @@
                 InstanceName = instanceName,
                 TenantId = tenantId,
                 SubscriptionId = subscriptionId,
-                DatabaseName = databaseName                
+                DatabaseName = databaseName,
+                CreateDatabaseIfNotExists = true
             });
 
             if (!key.IsNullOrEmpty())
@@ -56,7 +57,8 @@
                 InstanceName = instanceName,
                 TenantId = tenantId,
                 SubscriptionId = subscriptionId,
-                DatabaseName = databaseName
+                DatabaseName = databaseName,
+                CreateDatabaseIfNotExists = true
             });
             services.AddFactoryIfNotAdded<ITableStorage>();
             return services;
