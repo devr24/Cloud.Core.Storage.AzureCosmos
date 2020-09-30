@@ -23,7 +23,7 @@ There are three ways you can instantiate the Blob Storage Client.  Each way dict
 Below are examples of instantiating each type.
 
 #### 1. Connection String
-Create an instance of the Table Storage client with ConnectionConfig for connection string as follows:
+Create an instance of the Cosmos Storage client with ConnectionConfig for connection string as follows:
 
 ```csharp
 var tableConfig = new ConnectionConfig
@@ -32,12 +32,12 @@ var tableConfig = new ConnectionConfig
     };
 
 // Table client.
-var tablestorage = new TableStorage(blobConfig);	
+var tablestorage = new CosmosStorage(blobConfig);	
 ```
 Note: Instance name not required to be specified anywhere in configuration here as it is taken from the connection string itself.
 
 #### 2. Service Principle
-Create an instance of the Table Storage client with TableStorageConfig for Service Principle as follows:
+Create an instance of the Table Storage client with CosmosStorageConfig for Service Principle as follows:
 
 ```csharp
 var tableConfig = new ServicePrincipleConfig
@@ -50,7 +50,7 @@ var tableConfig = new ServicePrincipleConfig
     };
 
 // Table client.
-var tablestorage = new TableStorage(blobConfig);	
+var tablestorage = new CosmosStorage(blobConfig);	
 ```
 
 Usually the AppId, AppSecret (both of which are setup when creating a new service principle within Azure) and TenantId are specified in 
@@ -70,7 +70,7 @@ var tableConfig = new MsiConfig
     };
 
 // Table client.
-var tablestorage = new TableStorage(blobConfig);	
+var tablestorage = new CosmosStorage(blobConfig);	
 ```
 
 All that's required is the instance name to connect to.  Authentication runs under the context the application is running.
