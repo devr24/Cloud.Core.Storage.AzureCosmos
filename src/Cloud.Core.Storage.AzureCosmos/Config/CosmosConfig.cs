@@ -36,6 +36,16 @@
         public bool CreateDatabaseIfNotExists { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether Database is created with autoscale shared throughput.
+        /// </summary>
+        public bool AutoscaleDatabaseThroughput { get; set; }
+
+        /// <summary>
+        /// Gets or sets the max throughput to autoscale Database
+        /// </summary>
+        public int MaxThroughput { get; set; } = 4000;
+
+        /// <summary>
         /// Gets or sets the list of tables to be created during initialisation.
         /// </summary>
         /// <value>The list of tables to create.</value>

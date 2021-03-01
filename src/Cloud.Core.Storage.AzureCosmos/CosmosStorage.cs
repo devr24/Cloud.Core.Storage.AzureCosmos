@@ -535,6 +535,8 @@
         private readonly string _instanceName;
         private readonly string _subscriptionId;
         private readonly bool _createIfNotExists;
+        private readonly bool _autoscaleDatabaseThroughput;
+        private readonly int _maxThroughput;
         private readonly string[] _createTableNames;
 
         private const string DefaultPartitionKeyPath = "/_partitionKey";
@@ -581,7 +583,11 @@
             // Create the database if it does not exist and been instructed to.
             if (_createIfNotExists)
             {
-                _cloudClient.CreateDatabaseIfNotExistsAsync(DatabaseName).GetAwaiter().GetResult();
+                var throughputProperties = _autoscaleDatabaseThroughput
+                    ? ThroughputProperties.CreateAutoscaleThroughput(_maxThroughput)
+                    : null;
+
+                _cloudClient.CreateDatabaseIfNotExistsAsync(DatabaseName, throughputProperties).GetAwaiter().GetResult();
             }
 
             // Create any tables required up front.
@@ -611,6 +617,8 @@
 
             _createIfNotExists = config.CreateDatabaseIfNotExists;
             _createTableNames = config.CreateTables;
+            _maxThroughput = config.MaxThroughput;
+            _autoscaleDatabaseThroughput = config.AutoscaleDatabaseThroughput;
         }
 
         /// <summary>
@@ -632,6 +640,8 @@
             _subscriptionId = config.SubscriptionId;
             _createIfNotExists = config.CreateDatabaseIfNotExists;
             _createTableNames = config.CreateTables;
+            _maxThroughput = config.MaxThroughput;
+            _autoscaleDatabaseThroughput = config.AutoscaleDatabaseThroughput;
         }
 
         /// <summary>
@@ -653,6 +663,8 @@
             _subscriptionId = config.SubscriptionId;
             _createIfNotExists = config.CreateDatabaseIfNotExists;
             _createTableNames = config.CreateTables;
+            _maxThroughput = config.MaxThroughput;
+            _autoscaleDatabaseThroughput = config.AutoscaleDatabaseThroughput;
         }
 
 
