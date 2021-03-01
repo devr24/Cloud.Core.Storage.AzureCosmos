@@ -17,21 +17,15 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
     public class CosmosStorageIntegrationTest
     {
         private readonly ITableStorage _cosmosClient;
-        //private readonly ServicePrincipleConfig _config;
-        private readonly MsiConfig _config;
+        private readonly ConnectionConfig _config;
 
         public CosmosStorageIntegrationTest()
         {
             var readConfig = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
 
-            _config = new MsiConfig
+            _config = new ConnectionConfig
             {
-                InstanceName = readConfig.GetValue<string>("InstanceName"),
-                TenantId = readConfig.GetValue<string>("TenantId"),
-                SubscriptionId = readConfig.GetValue<string>("SubscriptionId"),
-                DatabaseName = "Test",
-                // AppId = readConfig.GetValue<string>("AppId"),
-                // AppSecret = readConfig.GetValue<string>("AppSecret"),
+                ConnectionString = readConfig.GetValue<string>("ConnectionString"),
                 CreateDatabaseIfNotExists = true
             };
 
