@@ -26,7 +26,8 @@ namespace Cloud.Core.Storage.AzureCosmos.Tests.IntegrationTests
             _config = new ConnectionConfig
             {
                 ConnectionString = readConfig.GetValue<string>("ConnectionString"),
-                CreateDatabaseIfNotExists = true
+                CreateDatabaseIfNotExists = true,
+                DatabaseName = "Test"
             };
 
             _cosmosClient = new CosmosStorage(_config);
